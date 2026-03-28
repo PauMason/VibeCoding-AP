@@ -1,54 +1,40 @@
-volvio a crear las tablas
-ya habia armado la app
-Tarea completada
-I've built the Well Assurance management app for Oil & Gas operations, featuring a dark industrial aesthetic with amber/orange accents. The app includes:
+Build a Canvas App in Power Apps connected to Dataverse to manage 
+the Well Assurance process for an Oil & Gas company.
 
-4 Screens:
+The following Dataverse tables already exist in this environment, 
+do NOT create new tables, connect directly to them:
+- coepp_pronostico
+- coepp_pronostico_detalles
+- coepp_casos
+- coepp_casos_detalles
 
-Active Forecast (Home) - Child PADs list with case status summaries and search
-Cases List - Cases per Child PAD with create/delete dialogs and business rule validation
-Case Detail - Status management, editable fields, Parent Wells gallery, and auto-Case 2 creation
-Parent Well Form - Role-based field permissions with status-aware editing
-Business Rules Implemented:
+--- ROLES (Azure AD Groups) ---
+- Reservoir
+- Assurance
+- Production Engineering
+- Management Control (CdG)
+- P&L / Programming
+- YAD / Geology / Others (read-only)
 
-Only one Draft/Open case per Child PAD
-Case 3 requires all previous cases Closed/Cancelled
-Parent Wells frozen when case is Open
-CdG can only edit Orden Interna for AB/AD types
-Reservoir can edit Presión Inicial when Carga Manual WHPI is enabled (Draft only)
-Assurance has contingency edit rights with mandatory justification
-Closing Case 3 auto-creates Case 2
+--- KEY BUSINESS RULES ---
+1. Only one case in Draft or Open status per Child PAD at a time.
+2. To create Case 3: all previous cases for that PAD must be Closed or Cancelled.
+3. If latest case is Closed → next case is Case 2.
+4. If latest case is Cancelled → new Case 3 can be created.
+5. On status change to Open: Parent Wells set is frozen (no add or delete).
+6. Structural fields become read-only for all roles when case is Open.
+7. Assurance can edit any field as contingency, but Justification is always mandatory.
+8. Closing Case 3 → system automatically creates Case 2 for the same Child PAD.
+9. Maxima_Presion_Esperada is always calculated, never editable.
+10. CdG can only fill Orden_Interna_Nro if Tipo_Aseguramiento = AB or AD.
+11. If Pozo_Padre_Origen = Manual → Justification mandatory on creation.
+12. If Carga_Manual_Whpi_Ind = YES → Presion_Inicial editable for Reservoir in Draft.
 
+--- SCREENS NEEDED ---
+1. Active Forecast - Child PADs list
+2. Cases list for a selected Child PAD
+3. Case detail with status management and Parent Wells gallery
+4. Parent Well form with role-based field permissions
 
-le cargue las tablas y borre las que habia creado
-hay que pedirle ahora que cree la automatizacion para cargar el pronostico sacar la logica del powerautomate FlowupdatePronostico
-
-esta fue la respuesta al cambio de modelo
-
-Synchronizing changes...
-
-Copilot said:
-All components of the Solution Plan are already internally consistent and aligned after the recent updates. Below is a concise verification across requirements, data model, and artifact proposals.
-
-Business requirements
-All user stories, roles, and business rules reference functional behaviors rather than table names. Nothing in the requirements contradicts the updated data model. No dependencies exist on tables that were removed (child_pad, caso, pozo_padre), so the requirements remain valid.
-
-Data model
-The plan now correctly reflects the actual Dataverse environment:
-• Only the existing five tables are included: Pronóstico cabecera, Casos detalle, Pronóstico detalle, Casos, Maestro pozos hijos.
-• All other table references were removed.
-• Metadata, display names, and column definitions match the structures shown in the user-provided environment snapshot.
-• All tables are marked read‑only, which matches the rule “do NOT create new tables; connect directly to existing ones.”
-• No business rule or user story refers to missing columns.
-
-Artifact proposals
-The app and agents reference conceptual entities (child PAD, caso, pozo padre) that now map directly to the Dataverse tables through the updated data model rather than through removed pseudo-entities. Nothing in the artifact proposals references non‑existent tables.
-Since artifact proposals describe functional behavior rather than schema, they remain aligned.
-
-Cross-component consistency check
-• Requirements align with the read-only tables: the app and assistants can read from Dataverse and apply business rules without schema changes.
-• All artifact proposals still implement the correct user stories.
-• No part of the plan requires schema updates to implement.
-
-Conclusion
-The Solution Plan is structurally coherent, and all components (requirements, data model, artifact proposals) remain aligned after the recent changes.
+Confirm the existing tables are connected and show the 
+Solution Plan before generating any screen.
