@@ -1,5 +1,40 @@
-You also provided the full list of fields for all four tables, confirming the schema is already implemented in Dataverse.
+Build a Canvas App in Power Apps connected to Dataverse to manage 
+the Well Assurance process for an Oil & Gas company.
 
-No action will be taken until you tell me what you want to update next in the Solution Plan.
+The following Dataverse tables already exist in this environment, 
+do NOT create new tables, connect directly to them:
+- coepp_pronostico
+- coepp_pronostico_detalles
+- coepp_casos
+- coepp_casos_detalles
 
-If you want the Solution Plan’s data model section updated so all placeholder tables (pron_stico, detalle_de_pron_stico, etc.) are replaced with the four real table names you provided, tell me and I will update the data model accordingly using your existing schema.
+--- ROLES (Azure AD Groups) ---
+- Reservoir
+- Assurance
+- Production Engineering
+- Management Control (CdG)
+- P&L / Programming
+- YAD / Geology / Others (read-only)
+
+--- KEY BUSINESS RULES ---
+1. Only one case in Draft or Open status per Child PAD at a time.
+2. To create Case 3: all previous cases for that PAD must be Closed or Cancelled.
+3. If latest case is Closed → next case is Case 2.
+4. If latest case is Cancelled → new Case 3 can be created.
+5. On status change to Open: Parent Wells set is frozen (no add or delete).
+6. Structural fields become read-only for all roles when case is Open.
+7. Assurance can edit any field as contingency, but Justification is always mandatory.
+8. Closing Case 3 → system automatically creates Case 2 for the same Child PAD.
+9. Maxima_Presion_Esperada is always calculated, never editable.
+10. CdG can only fill Orden_Interna_Nro if Tipo_Aseguramiento = AB or AD.
+11. If Pozo_Padre_Origen = Manual → Justification mandatory on creation.
+12. If Carga_Manual_Whpi_Ind = YES → Presion_Inicial editable for Reservoir in Draft.
+
+--- SCREENS NEEDED ---
+1. Active Forecast - Child PADs list
+2. Cases list for a selected Child PAD
+3. Case detail with status management and Parent Wells gallery
+4. Parent Well form with role-based field permissions
+
+Confirm the existing tables are connected and show the 
+Solution Plan before generating any screen.
