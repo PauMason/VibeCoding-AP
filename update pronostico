@@ -1,0 +1,24 @@
+Add a Power Automate flow to update the forecast data automatically.
+
+The flow must:
+1. Run daily at 8:00 AM
+2. Query coepp_pronostico ordered by Pronostico_Fecha_Dttm descending
+3. Filter only where Pronostico_Etiqueta_Desc = "Pronostico Oficial"
+4. Take the most recent record and compare with current Active forecast
+5. If a newer forecast exists:
+   a. Insert new header record in coepp_pronostico 
+      (Pronostico_Estado = Active)
+   b. Insert all detail records in coepp_pronostico_detalles
+   c. SYNC Child PAD Master (coepp_maestro_pad_hijos):
+      - PAD present in new forecast → set Active
+      - PAD NOT present in new forecast → set Inactive
+   d. Set all previous forecasts as Inactive
+   e. Send email to Assurance group: new forecast available
+6. If no newer forecast exists: do nothing, log result
+
+Use only existing tables:
+- coepp_pronostico
+- coepp_pronostico_detalles
+- coepp_maestro_pad_hijos
+
+Add this flow to the Solution Plan as a new artifact.
