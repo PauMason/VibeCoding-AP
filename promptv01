@@ -1,13 +1,11 @@
-Build a Canvas App in Power Apps connected to Dataverse to manage the Well 
-Assurance process for an Oil & Gas company. The app uses the following 
-Dataverse tables:
+Build a Canvas App in Power Apps connected to Dataverse to manage 
+the Well Assurance process for an Oil & Gas company.
 
 --- TABLES ---
 
 1. coepp_pronostico (Forecast - Header)
    - Pronostico_ID (Text)
    - Pronostico_Fecha_Dttm (DateTime)
-   - Pronostico_Etiqueta_Desc (Text)
    - Pronostico_Estado (Choice: Active | Inactive)
 
 2. coepp_pronostico_detalles (Forecast - Details)
@@ -28,7 +26,7 @@ Dataverse tables:
    - Caso_Estado (Choice: Draft | Open | Closed | Cancelled)
    - Caso_Fecha_Cierre (Date)
 
-4. coepp_casos_detalles (Cases - Details, one record per Parent Well)
+4. coepp_casos_detalles (Cases - Details)
    - ID_Caso (Lookup to coepp_casos)
    - Pozo_Padre_Nombre_Corto (Text)
    - Pozo_Padre_Origen (Choice: Manual | Active Forecast)
@@ -36,15 +34,15 @@ Dataverse tables:
    - Fluido_Pozo_Padre_Desc (Choice: GAS | NAFTA | OIL | OIL BS)
    - Carga_Manual_Whpi_Ind (Choice: YES | NO)
    - Presion_Inicial (Number)
-   - Inc_Presion_Por_Frachit (Number, read-only unless Manual Load = YES)
-   - Maxima_Presion_Esperada (Number, always read-only, calculated: Presion_Inicial + Inc_Presion_Por_Frachit)
+   - Inc_Presion_Por_Frachit (Number)
+   - Maxima_Presion_Esperada (Number, calculated: Presion_Inicial + Inc_Presion_Por_Frachit)
    - Tipo_Aseguramiento (Choice: AB | AD | FP | NC)
    - Tipo_Pozo (Text)
    - Tipo_Intervencion (Choice: INT | REP | ISQ)
    - Orden_Interna_Nro (Number)
-   - Justificacion (Text, mandatory when edited by Assurance role)
+   - Justificacion (Text)
 
---- ROLES (via Azure AD Groups) ---
+--- ROLES (Azure AD Groups) ---
 - Reservoir
 - Assurance
 - Production Engineering
@@ -52,87 +50,25 @@ Dataverse tables:
 - P&L / Programming
 - YAD / Geology / Others (read-only)
 
---- SCREENS ---
-
-SCREEN 1 — Active Forecast / Child PADs
-- Gallery with active Child PADs from the current active forecast
-- Columns: Pad_Hijo_Desc, number of Parent Wells, number of active cases
-- Free text search filter
-- On select → navigate to Screen 2
-- "Generate New Case" button visible only for Reservoir and Assurance roles
-  - Enabled only if no case exists in Draft or Open status for that PAD
-  - On click → create record in coepp_casos (Type=Case 3, Status=Draft), navigate to Screen 2
-
-SCREEN 2 — Cases for a Child PAD
-- Header with PAD and Forecast data
-- Gallery with all cases for the selected PAD, sorted by date descending
-- Columns: Caso_Nro, Caso_Tipo, Caso_Estado (color badge: Draft=gray, Open=green, Closed=navy, Cancelled=red), Created by, Date
-- On select → navigate to Screen 3
-
-SCREEN 3 — Case Detail
-- Header: Caso_Nro, PAD, Case Type, Status badge, Forecast ID, Created by, Date
-- "Change Status" button with logic:
-  - Draft → Open: visible for Reservoir. Requires all Parent Wells to have Presion_Inicial filled.
-  - Open → Closed: visible for Reservoir and Assurance.
-  - Open → Cancelled: visible for Assurance only. Requires mandatory Justification field.
-- Parent Wells section: expandable gallery showing coepp_casos_detalles for the case
-- "Add Parent Well Manually" button: visible only if Status=Draft AND role=Reservoir or Assurance
-- Delete button per row: visible only if Pozo_Padre_Origen=Manual AND Status=Draft
-- Case comments section (free text, with date and user)
-- "Notify P&L" button: visible for Reservoir/Assurance, only when Status=Open
-
-SCREEN 4 — Parent Well Form (edit coepp_casos_detalles)
-Field permissions by case status and user role:
-
-| Field                   | Draft/Reservoir  | Open/ProdEng    | Open/CdG    | Open/Assurance         |
-|------------------------|------------------|-----------------|-------------|------------------------|
-| Pozo_Padre_Nombre_Corto | Editable         | Read-only       | Read-only   | Editable + Justif.     |
-| Nivel_Calculado_Desc    | Editable         | Read-only       | Read-only   | Editable + Justif.     |
-| Fluido_Pozo_Padre_Desc  | Editable         | Read-only       | Read-only   | Editable + Justif.     |
-| Presion_Inicial         | Editable if Manual=YES | Read-only | Read-only | Editable + Justif.     |
-| Inc_Presion_Por_Frachit | Read-only        | Read-only       | Read-only   | Read-only              |
-| Maxima_Presion_Esperada | Read-only (calc) | Read-only       | Read-only   | Read-only              |
-| Tipo_Aseguramiento      | Read-only        | Editable        | Read-only   | Editable + Justif.     |
-| Tipo_Pozo               | Read-only        | Editable        | Read-only   | Editable + Justif.     |
-| Tipo_Intervencion       | Read-only        | Editable        | Read-only   | Editable + Justif.     |
-| Orden_Interna_Nro       | Read-only        | Read-only       | Editable    | Editable + Justif.     |
-| Justificacion           | Hidden           | Hidden          | Hidden      | Mandatory if editing   |
-
-Additional rules:
-- CdG can only fill Orden_Interna_Nro if Tipo_Aseguramiento = AB or AD
-- Maxima_Presion_Esperada = Presion_Inicial + Inc_Presion_Por_Frachit (always calculated, never editable)
-- If Carga_Manual_Whpi_Ind = YES → Presion_Inicial editable for Reservoir in Draft status
-- If Pozo_Padre_Origen = Manual → Justification mandatory for all roles on creation
-
 --- KEY BUSINESS RULES ---
 1. Only one case in Draft or Open status per Child PAD at a time.
-2. To create a new Case 3: all previous cases for the PAD must be Closed or Cancelled.
-3. If the latest case is Closed → next case to create is Case 2 (not Case 3).
-4. If the latest case is Cancelled → a new Case 3 can be created.
-5. On status change to Open (Locked): Parent Wells set is frozen (no add or delete allowed).
-6. Structural fields (Well name, Level, Fluid, Origin) become read-only for all roles when Open.
+2. To create Case 3: all previous cases for that PAD must be Closed or Cancelled.
+3. If latest case is Closed → next case is Case 2.
+4. If latest case is Cancelled → new Case 3 can be created.
+5. On status change to Open: Parent Wells set is frozen (no add or delete).
+6. Structural fields (well name, level, fluid, origin) become read-only for all roles when Open.
 7. Assurance can edit any field as contingency, but Justification is always mandatory.
-8. On closing Case 3 → system automatically creates Case 2 for the same Child PAD.
+8. Closing Case 3 → system automatically creates Case 2 for the same Child PAD.
+9. Maxima_Presion_Esperada is always calculated and never editable.
+10. CdG can only fill Orden_Interna_Nro if Tipo_Aseguramiento = AB or AD.
+11. If Pozo_Padre_Origen = Manual → Justification mandatory for all roles on creation.
+12. If Carga_Manual_Whpi_Ind = YES → Presion_Inicial editable for Reservoir in Draft.
 
---- POWER AUTOMATE NOTIFICATIONS ---
-Create flows triggered from the app:
+--- SCREENS NEEDED ---
+1. Active Forecast - Child PADs list
+2. Cases list for a selected Child PAD
+3. Case detail with status management and Parent Wells gallery
+4. Parent Well form with role-based field permissions
 
-- On Open: email to CdG and Production Engineering (CC: Assurance)
-  Subject: "Well Assurance - Case [No] - Case 3 – Open - PAD: [Child PAD] - Forecast ID: [ID]"
-
-- On setting Tipo_Intervencion for a Parent Well: email to Programming and YAD
-
-- On Cancelled: email to Reservoir and Geology (CC: Assurance)
-  Subject: "Well Assurance - Case [No] - Case 3 – Cancelled - PAD: [Child PAD]"
-
-- On Closed: email to Reservoir (CC: Assurance)
-  Subject: "Well Assurance - Case [No] - Case 3 – Closed - PAD: [Child PAD]"
-
-All emails include: table with case Parent Wells and "Access Application" button.
-From: Plataforma365
-
---- STYLE ---
-- Corporate Power Apps color palette (dark blue and white)
-- Status badges with colors: Draft=gray, Open=green, Closed=navy, Cancelled=red
-- Responsive layout for horizontal tablet (min resolution 1366x768)
-- Business Process Flow visible in case detail: Draft → Open → Closed
+Do not generate screens yet. First create all Dataverse tables with 
+the exact fields listed above and confirm the data model is ready.
